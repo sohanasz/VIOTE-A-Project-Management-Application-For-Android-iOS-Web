@@ -5,7 +5,7 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
-} from "react-native"; // ← Alert added
+} from "react-native";
 import { useEffect, useState, useCallback } from "react";
 import * as Animatable from "react-native-animatable";
 import useProject from "@/hooks/useProject";
@@ -43,7 +43,7 @@ const Notes = () => {
       };
 
       fetchNotes();
-    }, [project?._id])
+    }, [project?._id]),
   );
 
   const handleDeleteNote = async (noteId) => {

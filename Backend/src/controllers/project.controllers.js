@@ -5,7 +5,7 @@ import mongoose from "mongoose";
 import { ProjectNote } from "../models/note.models.js";
 import { Project } from "../models/project.models.js";
 import { ProjectMember } from "../models/projectmember.models.js";
-import { ProjectStatusEnum, UserRolesEnum } from "../utils/constants.js";
+import { StatusEnum, UserRolesEnum } from "../utils/constants.js";
 import { User } from "../models/user.models.js";
 
 const createProject = asyncHandler(async (req, res) => {
@@ -51,19 +51,22 @@ const getProjects = asyncHandler(async (req, res) => {
 
     const projectMemberships = await ProjectMember.find({
       user: userId,
-      status: ProjectStatusEnum.ACTIVE,
-    }).populate({
-      path: "project",
-      populate: {
-        path: "createdBy",
-        model: "User",
-        select: "username",
-      },
-    });
+      status: StatusEnum.ACTIVE,
+    })
+      .select({
+        project: 1,
+        role: 1,
+      })
+      .populate({
+        path: "project",
+        populate: {
+          path: "createdBy",
+          model: "User",
+          select: "username",
+        },
+      });
 
-    const projects = projectMemberships.map((proMem) => {
-      return { project: proMem.project, role: proMem.role };
-    });
+    const projects = projectMemberships;
 
     return res
       .status(200)
@@ -202,7 +205,7 @@ const addMemberToProject = asyncHandler(async (req, res) => {
       project: projectId,
     });
 
-    if (existing && existing.status === ProjectStatusEnum.ACTIVE) {
+    if (existing && existing.status === StatusEnum.ACTIVE) {
       throw new ApiError(
         400,
         `User is already a member of the project: ${usernameToAdd}`,
@@ -216,8 +219,8 @@ const addMemberToProject = asyncHandler(async (req, res) => {
         project: projectId,
         role: role || UserRolesEnum.MEMBER,
       });
-    } else if (existing.status === ProjectStatusEnum.REMOVED) {
-      existing.status = ProjectStatusEnum.ACTIVE;
+    } else if (existing.status === StatusEnum.REMOVED) {
+      existing.status = StatusEnum.ACTIVE;
       newMember = await existing.save();
     }
 
@@ -244,8 +247,8 @@ const deleteMember = asyncHandler(async (req, res) => {
   }
 
   const membership = await ProjectMember.findOneAndUpdate(
-    { user: memberId, project: projectId, status: ProjectStatusEnum.ACTIVE },
-    { status: ProjectStatusEnum.REMOVED },
+    { user: memberId, project: projectId, status: StatusEnum.ACTIVE },
+    { status: StatusEnum.REMOVED },
     { new: true },
   );
 
@@ -269,7 +272,7 @@ const updateMemberRole = asyncHandler(async (req, res) => {
   }
 
   const updatedMember = await ProjectMember.findOneAndUpdate(
-    { user: memberId, project: projectId, status: ProjectStatusEnum.ACTIVE },
+    { user: memberId, project: projectId, status: StatusEnum.ACTIVE },
     { role },
     { new: true },
   );

@@ -61,6 +61,16 @@ const projectNoteSchema = new Schema(
       type: [blockSchema],
       required: true,
     },
+
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
+
+    updatedAt: {
+      type: Date,
+      default: Date.now,
+    },
   },
   { timestamps: true },
 );

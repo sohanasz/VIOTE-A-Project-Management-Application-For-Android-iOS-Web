@@ -6,12 +6,12 @@ export const UserRolesEnum = {
 
 export const AvailableUserRoles = Object.values(UserRolesEnum);
 
-export const ProjectStatusEnum = {
+export const StatusEnum = {
   ACTIVE: "active",
-  ARCHIVED: "archived",
+  REMOVED: "removed",
 };
 
-export const AvailableProjectStatuses = Object.values(ProjectStatusEnum);
+export const AvailableStatuses = Object.values(StatusEnum);
 
 export const NotesPermissionsEnum = {
   READ: "read",

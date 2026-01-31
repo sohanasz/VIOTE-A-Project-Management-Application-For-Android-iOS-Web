@@ -3,7 +3,7 @@ import { router } from "expo-router";
 import { getItemAsync, deleteItemAsync } from "expo-secure-store";
 import { Alert, Platform } from "react-native";
 
-const baseURL = "10.25.226.80:8000";
+const baseURL = "10.193.80.118:8000";
 
 export const api = axios.create({
   baseURL: `http://${baseURL}/api/v1`,
@@ -50,10 +50,10 @@ export function initiateInterceptors({ setIsSignedInState }) {
       } catch (error) {
         Alert.alert(
           "Network Error",
-          "Please check your internet or try signing in again!"
+          "Please check your internet or try signing in again!",
         );
         return Promise.reject(error);
       }
-    }
+    },
   );
 }

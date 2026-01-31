@@ -3,7 +3,7 @@ import mongoose, { Schema } from "mongoose";
 import {
   NotesPermissionsEnum,
   AvailableNotesPermissions,
-} from "../utils/constants";
+} from "../utils/constants.js";
 
 const projectNoteMembershipSchema = new Schema({
   project: {
@@ -11,7 +11,22 @@ const projectNoteMembershipSchema = new Schema({
     ref: "Project",
     required: true,
   },
-  createdBy: {
+  note: {
+    type: Schema.Types.ObjectId,
+    ref: "ProjectNote",
+    required: true,
+  },
+  member: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+  permissionLevel: {
+    type: String,
+    enum: AvailableNotesPermissions,
+    required: true,
+  },
+  grantedBy: {
     type: Schema.Types.ObjectId,
     ref: "User",
     required: true,
@@ -19,12 +34,6 @@ const projectNoteMembershipSchema = new Schema({
   createdAt: {
     type: Date,
     default: Date.now,
-  },
-  permissionLevel: {
-    type: String,
-    enum: AvailableNotesPermissions,
-    required: true,
-    default: NotesPermissionsEnum.READ,
   },
 });
 
