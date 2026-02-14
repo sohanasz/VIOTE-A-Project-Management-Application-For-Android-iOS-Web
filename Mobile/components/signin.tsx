@@ -40,7 +40,7 @@ export default function SignInScreen({ setSignInScreen }: any) {
     } catch (err: any) {
       Alert.alert(
         "Login failed",
-        err?.response?.data?.message ?? "Something went wrong"
+        err?.response?.data?.message ?? "Something went wrong",
       );
     } finally {
       setLoading(false);
@@ -65,7 +65,7 @@ export default function SignInScreen({ setSignInScreen }: any) {
             useNativeDriver
             style={styles.brand}
           >
-            <Text style={styles.brandText}>VIOTE</Text>
+            <Text style={styles.brandText}>VIXI</Text>
             <View style={styles.brandUnderline} />
           </Animatable.View>
 

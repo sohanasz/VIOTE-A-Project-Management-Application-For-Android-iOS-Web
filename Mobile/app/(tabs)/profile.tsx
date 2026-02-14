@@ -30,7 +30,7 @@ const Profile = () => {
       }
 
       getUserDataFromLocalStorage();
-    }, [])
+    }, []),
   );
 
   if (!userData) {

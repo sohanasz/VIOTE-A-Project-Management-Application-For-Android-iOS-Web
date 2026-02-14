@@ -195,7 +195,6 @@ export function determineBlockStyle(blockType: string, colors: ColorScheme) {
     numericList: {
       color: colors.text,
       fontSize: 15,
-      marginVertical: 5,
     },
   });
 

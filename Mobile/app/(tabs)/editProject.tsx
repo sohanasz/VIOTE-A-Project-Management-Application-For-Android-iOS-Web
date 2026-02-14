@@ -43,7 +43,7 @@ export default function EditProject() {
     } catch (err) {
       console.error(
         "Error while fetching member list for project",
-        err.response
+        err.response,
       );
     } finally {
       setLoading(false);
@@ -57,7 +57,7 @@ export default function EditProject() {
       return () => {
         setProjectMembers(null);
       };
-    }, [project])
+    }, [project]),
   );
 
   const handleRemoveMember = async (id: string) => {

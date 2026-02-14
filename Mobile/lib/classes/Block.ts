@@ -1,11 +1,13 @@
-class Block {
+export class Block {
+  static minimumTextInputHeight = 60;
+
   constructor(blockType, text, meta) {
     this.id = null;
     this.blockType = blockType;
     this.text = text;
     this.meta = meta;
     this.isFocused = false;
-    this.textInputHeight = 100;
+    this.textInputHeight = Block.minimumTextInputHeight;
   }
 }
 
@@ -24,7 +26,7 @@ export class BulletPoint {
   constructor(id: number | null, text: string) {
     this.id = id;
     this.text = text;
-    this.textInputHeight = 25;
+    this.textInputHeight = Block.minimumTextInputHeight;
   }
 }
 export class BulletList extends Block {
@@ -32,7 +34,7 @@ export class BulletList extends Block {
   constructor() {
     super("bulletList", "", {});
 
-    this.text = [{ id: 1, text: "Your text" }];
+    this.text = [new BulletPoint(1, "Your text")];
     this.currentBulletPointId = null;
   }
   upgradeToNumeric() {

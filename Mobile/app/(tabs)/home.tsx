@@ -54,7 +54,7 @@ export default function ProjectsListScreen() {
         }
       };
       fetchProjects();
-    }, [showCreateProject])
+    }, [showCreateProject]),
   );
 
   const renderItem = ({ item }: { item: Project }) => {

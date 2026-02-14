@@ -37,7 +37,7 @@ export default function SignUpScreen({ setSignInScreen }: any) {
         fullName,
         username.toLowerCase(),
         email,
-        password
+        password,
       );
 
       if (res.statusCode === 201) {
@@ -48,7 +48,7 @@ export default function SignUpScreen({ setSignInScreen }: any) {
     } catch (err: any) {
       Alert.alert(
         "Signup failed",
-        err?.response?.data?.message ?? "Something went wrong"
+        err?.response?.data?.message ?? "Something went wrong",
       );
     } finally {
       setLoading(false);
@@ -73,7 +73,7 @@ export default function SignUpScreen({ setSignInScreen }: any) {
             useNativeDriver
             style={styles.brand}
           >
-            <Text style={styles.brandText}>VIOTE</Text>
+            <Text style={styles.brandText}>VIXI</Text>
             <View style={styles.brandUnderline} />
           </Animatable.View>
 

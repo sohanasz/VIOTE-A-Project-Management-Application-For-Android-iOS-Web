@@ -19,6 +19,7 @@ import {
   determineBlockStyle,
 } from "@/assets/styles/createNote";
 import {
+  Block,
   BulletList,
   BulletPoint,
   Heading,
@@ -28,16 +29,6 @@ import { ColorScheme } from "@/hooks/useTheme";
 import { router } from "expo-router";
 
 const SESSION_KEY = "TEXT_EDITOR_DRAFT";
-
-interface Block {
-  id: number;
-  blockType: "heading" | "paragraph" | "bulletList" | "numericList";
-  text: string | BulletPoint[];
-  textInputHeight: number;
-  currentBulletPointId?: number | null;
-  isFocused?: boolean;
-  meta?: Record<string, unknown>;
-}
 
 interface TextEditorProps {
   notesTitle: string;
@@ -57,7 +48,7 @@ interface EditorDraft {
 interface RenderBlockProps {
   item: Block;
 }
-
+// let count = 1;
 const TextEditor = ({
   notesTitle,
   setNotesTitle,
@@ -67,6 +58,8 @@ const TextEditor = ({
   onSave,
   setOnSaveError,
 }: TextEditorProps) => {
+  // console.log("RERENDER", count++);
+
   const styles = createCreateNoteStyles(colors);
   const fetchCacheRef = useRef<boolean>(true);
 
@@ -121,18 +114,14 @@ const TextEditor = ({
   }, [setNotes, setNotesTitle]);
 
   useEffect(() => {
-    console.log("HEllo There");
-
     if (Platform.OS !== "web") return;
-    console.log("HEllo There 1", fetchCacheRef.current);
+
     if (fetchCacheRef.current) return;
-    console.log("HEllo There 2");
 
     const payload: EditorDraft = {
       notesTitle,
       notes: Array.isArray(notes) ? notes : [],
     };
-    console.log("HEllo There 3", notes);
 
     try {
       sessionStorage.setItem(SESSION_KEY, JSON.stringify(payload));
@@ -198,6 +187,9 @@ const TextEditor = ({
           key={bulletPoint.id}
           style={{
             flexDirection: "row",
+            alignContent: "flex-start",
+            marginVertical: 7,
+            cursor: "text",
           }}
           onPress={() => {
             item.currentBulletPointId = bulletPoint.id;
@@ -206,7 +198,7 @@ const TextEditor = ({
             setDocumentUpdateRender((count) => count + 1);
           }}
         >
-          <Text style={style}>
+          <Text style={[style, { fontWeight: 500 }]}>
             {item.blockType === "numericList"
               ? `  ${bulletPoint.id}. `
               : `  ${BulletList.preString}  `}
@@ -218,16 +210,17 @@ const TextEditor = ({
               style={[
                 style,
                 {
+                  height: bulletPoint.textInputHeight,
+                  padding: 10,
                   borderColor: "gray",
                   borderWidth: 2,
                   borderRadius: 16,
                   overflow: "hidden",
                   flex: 1,
-                  padding: 10,
                 },
               ]}
               value={currentInputText}
-              textAlignVertical="top"
+              textAlignVertical="center"
               multiline={true}
               placeholder="Enter Something"
               onChangeText={(text: string) => {
@@ -314,24 +307,28 @@ const TextEditor = ({
               }}
               onContentSizeChange={(e) => {
                 const newHeight = Math.max(
-                  item.textInputHeight,
+                  Block.minimumTextInputHeight,
                   e.nativeEvent.contentSize.height,
                 );
-                if (newHeight !== item.textInputHeight) {
-                  item.textInputHeight = newHeight;
+                if (newHeight !== bulletPoint.textInputHeight) {
+                  bulletPoint.textInputHeight = newHeight;
                   setDocumentUpdateRender((count) => count + 1);
                 }
               }}
               autoFocus={true}
             />
           ) : (
-            <TextInput
-              style={[style, { flex: 1, paddingInline: 10 }]}
-              multiline
-              value={bulletPoint.text}
-              editable={false}
-              focusable={false}
-            />
+            <Text
+              style={[
+                style,
+                {
+                  flex: 1,
+                  paddingInline: 7,
+                },
+              ]}
+            >
+              {bulletPoint.text}
+            </Text>
           )}
         </Pressable>
       );
@@ -390,11 +387,24 @@ const TextEditor = ({
             }}
             onContentSizeChange={(e) => {
               const newHeight = Math.max(
-                item.textInputHeight,
+                Block.minimumTextInputHeight,
                 e.nativeEvent.contentSize.height,
               );
+              // Needs work as 12 rerenders noticed per backspace key press for removing line, investigate further and optimizz
+              // console.log(
+              //   "CONTENT SIZE RN",
+              //   e.nativeEvent.contentSize.height,
+              //   "NEW HEIGHT",
+              //   newHeight,
+              //   "newHeight !== item.textInputHeight",
+              //   newHeight !== item.textInputHeight,
+              //   "item.textInputHeight",
+              //   item.textInputHeight,
+              // );
+
               if (newHeight !== item.textInputHeight) {
                 item.textInputHeight = newHeight;
+                setDocumentUpdateRender((count) => count + 1);
               }
             }}
           />

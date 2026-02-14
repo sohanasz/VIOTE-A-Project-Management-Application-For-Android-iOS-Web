@@ -1,9 +1,13 @@
 import mongoose, { Schema } from "mongoose";
 
-import {
-  NotesPermissionsEnum,
-  AvailableNotesPermissions,
-} from "../utils/constants.js";
+import { AvailableNotesPermissions } from "../utils/constants.js";
+
+const getNotePermission = async (noteId, userId) => {
+  return await projectNoteMembership.findOne({
+    note: createObjectId(noteId),
+    member: userId,
+  });
+};
 
 const projectNoteMembershipSchema = new Schema({
   project: {
