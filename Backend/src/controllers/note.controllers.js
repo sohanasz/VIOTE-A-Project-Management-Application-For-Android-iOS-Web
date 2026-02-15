@@ -1,65 +1,52 @@
 import { asyncHandler } from "../utils/async-handler.js";
 import { ApiError } from "../utils/api-error.js";
 import { ApiResponse } from "../utils/api-response.js";
-import mongoose from "mongoose";
 import { ProjectNote } from "../models/note.models.js";
-import { Project } from "../models/project.models.js";
 import { projectNoteMembership } from "../models/notemember.model.js";
 import { NotesPermissionsEnum } from "../utils/constants.js";
 import { createObjectId } from "../utils/stringToObjectId.js";
-import { User } from "../models/user.models.js";
-import { ProjectMember } from "../models/projectmember.models.js";
+import { projectValidator } from "../utils/validators/projectValidator.js";
+import { notesValidator } from "../utils/validators/notesValidator.js";
 
+// ================= CREATE NOTE =================
 const createNote = asyncHandler(async (req, res) => {
-  const { projectId } = req.params;
+  const projectId = createObjectId(req.params.projectId);
   const { title, content } = req.body;
+  const userId = req.user._id;
 
-  const project = await Project.findById(createObjectId(projectId));
-
-  if (!project) {
-    throw new ApiError(401, "No project found");
-  }
+  await projectValidator(projectId, userId);
 
   const note = await ProjectNote.create({
-    project: createObjectId(projectId),
+    project: projectId,
     title,
     content,
-    createdBy: req.user._id,
+    createdBy: userId,
   });
 
   await projectNoteMembership.create({
-    project: createObjectId(projectId),
-    createdBy: req.user._id,
+    project: projectId,
+    note: note._id,
+    member: userId,
     permissionLevel: NotesPermissionsEnum.ADMIN,
+    grantedBy: userId,
   });
 
-  return res.status(200).json(new ApiResponse(200, note, "Notes Created!"));
+  return res
+    .status(201)
+    .json(new ApiResponse(201, note, "Note created successfully"));
 });
 
+// ================= GET ALL NOTES =================
 const getNotes = asyncHandler(async (req, res) => {
-  const user = req.user;
-  const { projectId } = req.params;
-  const projectObjectId = createObjectId(projectId);
+  const projectId = createObjectId(req.params.projectId);
+  const userId = req.user._id;
 
-  const project = await Project.findById(projectObjectId);
-
-  if (!project) {
-    throw new ApiError(401, "No project found");
-  }
-
-  const isUserPartOfProject = await ProjectMember.findOne({
-    project: projectObjectId,
-    user: user._id,
-  });
-
-  if (!isUserPartOfProject) {
-    throw new ApiError(403, "You are not a member of this project");
-  }
+  await projectValidator(projectId, userId);
 
   const notes = await projectNoteMembership
     .find({
-      project: projectObjectId,
-      member: user._id,
+      project: projectId,
+      member: userId,
     })
     .populate({
       path: "note",
@@ -72,61 +59,85 @@ const getNotes = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, notes, "Fetched all notes"));
 });
 
+// ================= GET NOTE BY ID =================
 const getNoteById = asyncHandler(async (req, res) => {
-  const { projectId, noteId } = req.params;
+  const projectId = createObjectId(req.params.projectId);
+  const noteId = createObjectId(req.params.noteId);
+  const userId = req.user._id;
 
-  const project = await Project.findById(createObjectId(projectId));
+  await projectValidator(projectId, userId);
 
-  if (!project) {
-    throw new ApiError(401, "No project found");
-  }
+  const { note } = await notesValidator(projectId, noteId, userId);
 
-  const note = await ProjectNote.findById(createObjectId(noteId));
+  const populatedNote = await ProjectNote.findById(note._id)
+    .select("_id title content createdBy createdAt updatedAt")
+    .populate({
+      path: "createdBy",
+      select: "_id username",
+    });
 
-  if (!note) {
-    throw new ApiError(401, "Note not found");
-  }
-
-  if (note.project.toString() !== createObjectId(projectId).toString()) {
-    throw new ApiError(403, "Invalid access of note");
-  }
-
-  return res.status(200).json(new ApiResponse(200, note, "Fetched a note"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, populatedNote, "Fetched note"));
 });
 
+// ================= UPDATE NOTE =================
 const updateNote = asyncHandler(async (req, res) => {
-  const { noteId } = req.params;
+  const projectId = createObjectId(req.params.projectId);
+  const noteId = createObjectId(req.params.noteId);
+  const userId = req.user._id;
   const { title, content } = req.body;
 
-  const existingNote = await ProjectNote.findById(createObjectId(noteId));
+  await projectValidator(projectId, userId);
 
-  if (!existingNote) {
-    throw new ApiError(401, "Note not found");
+  const { membership } = await notesValidator(projectId, noteId, userId);
+
+  if (
+    membership.permissionLevel !== NotesPermissionsEnum.WRITE &&
+    membership.permissionLevel !== NotesPermissionsEnum.ADMIN
+  ) {
+    throw new ApiError(403, "You do not have permission to update this note");
   }
 
   const updatedNote = await ProjectNote.findByIdAndUpdate(
-    createObjectId(noteId),
+    noteId,
     { title, content },
     { new: true },
-  ).populate("createdBy", "username fullname avatar");
+  )
+    .select("_id title content createdBy createdAt updatedAt")
+    .populate({
+      path: "createdBy",
+      select: "_id username",
+    });
 
   return res
     .status(200)
-    .json(new ApiResponse(200, updatedNote, "Updated Note"));
+    .json(new ApiResponse(200, updatedNote, "Note updated successfully"));
 });
 
+// ================= DELETE NOTE =================
 const deleteNote = asyncHandler(async (req, res) => {
-  const { noteId } = req.params;
+  const projectId = createObjectId(req.params.projectId);
+  const noteId = createObjectId(req.params.noteId);
+  const userId = req.user._id;
 
-  const note = await ProjectNote.findByIdAndDelete(createObjectId(noteId));
+  await projectValidator(projectId, userId);
 
-  if (!note) {
-    throw new ApiError(401, "Note not found");
+  const { membership } = await notesValidator(projectId, noteId, userId);
+
+  if (membership.permissionLevel !== NotesPermissionsEnum.ADMIN) {
+    throw new ApiError(403, "Only admin can delete this note");
   }
 
+  await ProjectNote.findByIdAndDelete(noteId);
+
+  await projectNoteMembership.deleteMany({
+    note: noteId,
+  });
+
   return res
     .status(200)
-    .json(new ApiResponse(200, note, "Successfully Deleted"));
+    .json(new ApiResponse(200, null, "Note deleted successfully"));
 });
 
-export { createNote, deleteNote, getNoteById, getNotes, updateNote };
+export { createNote, getNotes, getNoteById, updateNote, deleteNote };

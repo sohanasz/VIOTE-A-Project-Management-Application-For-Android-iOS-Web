@@ -3,7 +3,7 @@ import { router } from "expo-router";
 import { getItemAsync, deleteItemAsync } from "expo-secure-store";
 import { Alert, Platform } from "react-native";
 
-const baseURL = "10.216.159.42:8000";
+const baseURL = "10.184.71.195:8000";
 
 export const api = axios.create({
   baseURL: `http://${baseURL}/api/v1`,
