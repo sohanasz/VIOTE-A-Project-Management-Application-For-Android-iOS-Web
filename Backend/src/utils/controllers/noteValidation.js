@@ -3,24 +3,30 @@ import { projectNoteMembership } from "../../models/notemember.model.js";
 import { ApiError } from "../api-error.js";
 
 export const notesValidator = async (projectId, noteId, userId) => {
-  const note = await ProjectNote.findOne({
-    _id: noteId,
-    project: projectId,
-  });
+  const result = await projectNoteMembership.aggregate([
+    {
+      $match: {
+        project: new mongoose.Types.ObjectId(projectId),
+        note: new mongoose.Types.ObjectId(noteId),
+        member: new mongoose.Types.ObjectId(userId),
+      },
+    },
+    {
+      $lookup: {
+        from: "projectnotes",
+        localField: "note",
+        foreignField: "_id",
+        as: "note",
+      },
+    },
+    {
+      $unwind: "$note",
+    },
+  ]);
 
-  if (!note) {
-    throw new ApiError(404, "Note not found");
+  if (!result.length || !result[0].note) {
+    throw new ApiError(404, "Note not found or access denied");
   }
 
-  const membership = await projectNoteMembership.findOne({
-    project: projectId,
-    note: noteId,
-    member: userId,
-  });
-
-  if (!membership) {
-    throw new ApiError(403, "You do not have access to this note");
-  }
-
-  return { note, membership };
+  return { note: result[0].note, membership: result[0] };
 };
