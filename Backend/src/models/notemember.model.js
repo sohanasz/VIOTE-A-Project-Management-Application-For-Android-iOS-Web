@@ -34,6 +34,11 @@ const projectNoteMembershipSchema = new Schema({
   },
 });
 
+projectNoteMembershipSchema.index(
+  { project: 1, note: 1, member: 1 },
+  { unique: true },
+);
+
 export const projectNoteMembership = mongoose.model(
   "projectNoteMembership",
   projectNoteMembershipSchema,

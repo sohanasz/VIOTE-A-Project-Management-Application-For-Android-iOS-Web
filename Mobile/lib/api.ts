@@ -3,7 +3,8 @@ import { router } from "expo-router";
 import { getItemAsync, deleteItemAsync } from "expo-secure-store";
 import { Alert, Platform } from "react-native";
 
-const baseURL = "10.184.71.195:8000";
+// Local IP address of the backend server within local network.
+const baseURL = "10.140.104.210:8000";
 
 export const api = axios.create({
   baseURL: `http://${baseURL}/api/v1`,

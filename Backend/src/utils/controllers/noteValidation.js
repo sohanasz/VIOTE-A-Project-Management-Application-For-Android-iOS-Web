@@ -1,14 +1,21 @@
-import { ProjectNote } from "../../models/note.models.js";
+import mongoose from "mongoose";
 import { projectNoteMembership } from "../../models/notemember.model.js";
 import { ApiError } from "../api-error.js";
 
-export const notesValidator = async (projectId, noteId, userId) => {
-  const result = await projectNoteMembership.aggregate([
+export const notesValidator = async (
+  projectId,
+  noteId,
+  userId,
+  options = {},
+) => {
+  const { populate = [] } = options;
+
+  const pipeline = [
     {
       $match: {
-        project: new mongoose.Types.ObjectId(projectId),
-        note: new mongoose.Types.ObjectId(noteId),
-        member: new mongoose.Types.ObjectId(userId),
+        project: projectId,
+        note: noteId,
+        member: userId,
       },
     },
     {
@@ -22,11 +29,65 @@ export const notesValidator = async (projectId, noteId, userId) => {
     {
       $unwind: "$note",
     },
-  ]);
+  ];
+
+  /**
+   * Population map
+   * Add new populate options here in the future
+   */
+  const populationMap = {
+    createdBy: [
+      {
+        $lookup: {
+          from: "users",
+          localField: "note.createdBy",
+          foreignField: "_id",
+          as: "note.createdBy",
+        },
+      },
+      {
+        $unwind: {
+          path: "$note.createdBy",
+        },
+      },
+      {
+        $addFields: {
+          "note.createdBy": {
+            _id: "$note.createdBy._id",
+            username: "$note.createdBy.username",
+          },
+        },
+      },
+    ],
+
+    // Future example:
+    // project: [
+    //   {
+    //     $lookup: {
+    //       from: "projects",
+    //       localField: "project",
+    //       foreignField: "_id",
+    //       as: "project",
+    //     },
+    //   },
+    //   { $unwind: "$project" },
+    // ],
+  };
+
+  populate.forEach((field) => {
+    if (populationMap[field]) {
+      pipeline.push(...populationMap[field]);
+    }
+  });
+
+  const result = await projectNoteMembership.aggregate(pipeline);
 
   if (!result.length || !result[0].note) {
     throw new ApiError(404, "Note not found or access denied");
   }
 
-  return { note: result[0].note, membership: result[0] };
+  return {
+    note: result[0].note,
+    membership: result[0],
+  };
 };

@@ -16,20 +16,27 @@ const createNote = asyncHandler(async (req, res) => {
 
   await projectValidator(projectId, userId);
 
+  const session = await mongoose.startSession();
+
   const note = await ProjectNote.create({
     project: projectId,
     title,
     content,
     createdBy: userId,
-  });
+  }).session(session);
 
-  await projectNoteMembership.create({
-    project: projectId,
-    note: note._id,
-    member: userId,
-    permissionLevel: NotesPermissionsEnum.ADMIN,
-    grantedBy: userId,
-  });
+  await projectNoteMembership
+    .create({
+      project: projectId,
+      note: note._id,
+      member: userId,
+      permissionLevel: NotesPermissionsEnum.ADMIN,
+      grantedBy: userId,
+    })
+    .session(session);
+
+  await session.commitTransaction();
+  session.endSession();
 
   return res
     .status(201)
@@ -67,14 +74,14 @@ const getNoteById = asyncHandler(async (req, res) => {
 
   await projectValidator(projectId, userId);
 
-  const { note } = await notesValidator(projectId, noteId, userId);
+  const { note } = await notesValidator(
+    projectId,
+    noteId,
+    userId,
+    (populate = ["createdBy"]),
+  );
 
-  const populatedNote = await ProjectNote.findById(note._id)
-    .select("_id title content createdBy createdAt updatedAt")
-    .populate({
-      path: "createdBy",
-      select: "_id username",
-    });
+  const populatedNote = note;
 
   return res
     .status(200)
@@ -126,14 +133,22 @@ const deleteNote = asyncHandler(async (req, res) => {
   const { membership } = await notesValidator(projectId, noteId, userId);
 
   if (membership.permissionLevel !== NotesPermissionsEnum.ADMIN) {
-    throw new ApiError(403, "Only admin can delete this note");
+    throw new ApiError(403, "Only note admin can delete this note");
   }
 
-  await ProjectNote.findByIdAndDelete(noteId);
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-  await projectNoteMembership.deleteMany({
-    note: noteId,
-  });
+  await ProjectNote.findByIdAndDelete(noteId).session(session);
+
+  await projectNoteMembership
+    .deleteMany({
+      note: noteId,
+    })
+    .session(session);
+
+  await session.commitTransaction();
+  session.endSession();
 
   return res
     .status(200)

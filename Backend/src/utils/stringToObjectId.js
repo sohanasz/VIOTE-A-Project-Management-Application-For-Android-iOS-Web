@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-export const createObjectId = (id, controllerName) => {
+export const createObjectId = (id) => {
   if (!id) {
     throw new ApiError(400, "Id is required for this operation ");
   }
