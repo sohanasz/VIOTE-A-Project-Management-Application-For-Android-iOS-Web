@@ -168,6 +168,7 @@ const TextEditor = ({
     }
 
     block.id = blockId + 1;
+    block.order = notes.length;
     setBlockId(blockId + 1);
 
     setNotes((prevNotes: Block[]): Block[] => {
@@ -426,8 +427,18 @@ const TextEditor = ({
   };
 
   const handleDeleteBlock = (): void => {
+    let notesLength = 0;
+
+    notes[currentBlockToEdit.order];
+
     const updatedBlocksList = notes.filter((block) => {
-      return block !== currentBlockToEdit;
+      if (block === currentBlockToEdit) {
+        return false;
+      }
+
+      block.order = notesLength++;
+
+      return true;
     });
 
     setNotes(updatedBlocksList);

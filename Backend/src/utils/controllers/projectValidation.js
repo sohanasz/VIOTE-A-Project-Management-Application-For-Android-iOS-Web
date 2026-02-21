@@ -5,8 +5,8 @@ export const projectValidator = async (projectId, userId) => {
   const result = await ProjectMember.aggregate([
     {
       $match: {
-        project: new mongoose.Types.ObjectId(projectId),
-        user: new mongoose.Types.ObjectId(userId),
+        project: projectId,
+        user: userId,
       },
     },
     {

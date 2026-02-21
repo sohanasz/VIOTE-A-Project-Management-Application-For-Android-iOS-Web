@@ -1,38 +1,41 @@
+export class Note {
+  constructor(title, content) {
+    this.title = title;
+    this.content = content;
+    this.blockOrders = [];
+  }
+}
+
 export class Block {
   static minimumTextInputHeight = 60;
 
   constructor(blockType, text, meta) {
     this.id = null;
+    this.order = null;
     this.blockType = blockType;
     this.text = text;
     this.meta = meta;
-    this.isFocused = false;
     this.textInputHeight = Block.minimumTextInputHeight;
+    this.version = 0;
   }
 }
 
 export class Heading extends Block {
-  constructor() {
-    super("heading", "Heading", {});
+  constructor(meta = {}) {
+    super("heading", "Heading", meta);
   }
 }
 
 export class Paragraph extends Block {
-  constructor() {
-    super("paragraph", "Paragraph", {});
+  constructor(meta = {}) {
+    super("paragraph", "Paragraph", meta);
   }
 }
-export class BulletPoint {
-  constructor(id: number | null, text: string) {
-    this.id = id;
-    this.text = text;
-    this.textInputHeight = Block.minimumTextInputHeight;
-  }
-}
+
 export class BulletList extends Block {
   static preString = "•";
-  constructor() {
-    super("bulletList", "", {});
+  constructor(meta = {}) {
+    super("bulletList", "", meta);
 
     this.text = [new BulletPoint(1, "Your text")];
     this.currentBulletPointId = null;
@@ -40,5 +43,24 @@ export class BulletList extends Block {
   upgradeToNumeric() {
     this.blockType = "numericList";
     return this;
+  }
+}
+
+export class BulletPoint {
+  constructor(id: number | null, text: string) {
+    this.id = id;
+    this.order = null;
+    this.text = text;
+    this.textInputHeight = Block.minimumTextInputHeight;
+    this.version = 0;
+  }
+}
+
+export class BlockMeta {
+  constructor() {
+    this.createdAt = new Date();
+    this.updatedAt = new Date();
+    this.createdBy = null;
+    this.lastUpdatedBy = null;
   }
 }

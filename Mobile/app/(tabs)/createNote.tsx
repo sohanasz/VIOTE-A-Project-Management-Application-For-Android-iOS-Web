@@ -1,4 +1,4 @@
-import { Platform } from "react-native";
+import { Alert, Platform } from "react-native";
 import { useEffect, useState } from "react";
 import { router } from "expo-router";
 import useTheme from "@/hooks/useTheme";
@@ -91,7 +91,7 @@ const CreateNote = () => {
     }
 
     try {
-      await api.post(`/projects/${activeProjectId}/notes`, {
+      const res = await api.post(`/projects/${activeProjectId}/notes`, {
         title: noteTitle,
         content: note,
       });
@@ -144,6 +144,16 @@ const CreateNote = () => {
         router.back();
       }
     } catch (err) {
+      if (err?.response?.status === 409) {
+        const serverMessage = err.response.data?.message || "";
+        Platform.OS === "web"
+          ? window.alert(`Conflict: ${serverMessage}`)
+          : Alert.alert("Conflict", serverMessage);
+
+        console.log("CONFLICT UPDATED NOTE - ", err.response.data);
+
+        return;
+      }
       console.error("Failed to update note", err);
       showAlert("Error", "Notes did not update.");
     }

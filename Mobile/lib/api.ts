@@ -36,10 +36,11 @@ export function initiateInterceptors({ setIsSignedInState }) {
           error?.response?.data.statusCode === 401 &&
           error?.response?.data.message === "Session Ended"
         ) {
-          Alert.alert("Session ended", "Login again for new session");
           if (Platform.OS !== "web") {
+            Alert.alert("Session ended", "Login again for new session");
             await deleteItemAsync("token");
           } else {
+            window.alert("Session ended. Please login again for new session.");
             localStorage.removeItem("token");
           }
 
@@ -49,10 +50,14 @@ export function initiateInterceptors({ setIsSignedInState }) {
           return Promise.reject(error);
         }
       } catch (error) {
-        Alert.alert(
-          "Network Error",
-          "Please check your internet or try signing in again!",
-        );
+        Platform.OS === "web"
+          ? window.alert(
+              "Network Error. Please check your internet or try signing in again!",
+            )
+          : Alert.alert(
+              "Network Error",
+              "Please check your internet or try signing in again!",
+            );
         return Promise.reject(error);
       }
     },

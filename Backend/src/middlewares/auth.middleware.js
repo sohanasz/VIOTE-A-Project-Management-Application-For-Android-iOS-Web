@@ -39,7 +39,7 @@ export const validateProjectPermission = (roles = []) => {
     }
 
     const project = await ProjectMember.findOne({
-      project: new mongoose.Types.ObjectId(`${projectId}`),
+      project: createObjectId(projectId),
       user: userId,
     });
 

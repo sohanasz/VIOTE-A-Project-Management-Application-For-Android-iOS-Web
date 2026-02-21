@@ -52,6 +52,11 @@ const projectNoteSchema = new Schema(
       required: true,
     },
 
+    lastUpdatedBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
+
     title: {
       type: String,
       required: true,
@@ -61,18 +66,12 @@ const projectNoteSchema = new Schema(
       type: [blockSchema],
       required: true,
     },
-
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
-
-    updatedAt: {
-      type: Date,
-      default: Date.now,
-    },
   },
-  { timestamps: true },
+  {
+    timestamps: true,
+    optimisticConcurrency: true,
+    versionKey: "__v",
+  },
 );
 
 export const ProjectNote = mongoose.model("ProjectNote", projectNoteSchema);

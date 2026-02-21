@@ -23,6 +23,7 @@ const createNote = asyncHandler(async (req, res) => {
     title,
     content,
     createdBy: userId,
+    lastUpdatedBy: userId,
   }).session(session);
 
   await projectNoteMembership
@@ -106,9 +107,12 @@ const updateNote = asyncHandler(async (req, res) => {
     throw new ApiError(403, "You do not have permission to update this note");
   }
 
-  const updatedNote = await ProjectNote.findByIdAndUpdate(
-    noteId,
-    { title, content },
+  const updatedNote = await ProjectNote.findOneAndUpdate(
+    { _id: noteId, project: projectId, __v: req.body.__v },
+    {
+      $set: { title: title, content: content, lastUpdatedBy: userId },
+      $inc: { __v: 1 },
+    },
     { new: true },
   )
     .select("_id title content createdBy createdAt updatedAt")
@@ -116,6 +120,22 @@ const updateNote = asyncHandler(async (req, res) => {
       path: "createdBy",
       select: "_id username",
     });
+
+  if (!updatedNote) {
+    const recentUpdatedNote = await ProjectNote.findById(noteId)
+      .select("_id title content createdBy createdAt updatedAt lastUpdatedBy")
+      .populate({ path: "lastUpdatedBy", select: "_id username" });
+
+    return res
+      .status(409)
+      .json(
+        new ApiResponse(
+          409,
+          recentUpdatedNote,
+          `Conflict detected. Recently note was updated by other user ${recentUpdatedNote.lastUpdatedBy.username}. Please refresh and try again.`,
+        ),
+      );
+  }
 
   return res
     .status(200)
